@@ -1,3 +1,5 @@
+// Adapted from https://www.youtube.com/watch?v=mbsmsi7l3r4
+
 require('dotenv').config()
 
 const express = require('express')
@@ -8,36 +10,36 @@ app.use(express.json())
 
 let refreshTokens = []
 
-app.post('/token', (req, res) => {
-    const refreshToken = req.body.token
-    if (refreshToken == null) return res.sendStatus(401)
-    if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403)
-        const accessToken = generateAccessToken({ name: user.name })
-        res.json({ accessToken: accessToken })
-    })
+app.post('/token', (request, response) => {
+  const refreshToken = request.body.token
+  if (refreshToken == null) return response.sendStatus(401)
+  if (!refreshTokens.includes(refreshToken)) return response.sendStatus(403)
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) return response.sendStatus(403)
+    const accessToken = generateAccessToken({ name: user.name })
+    response.json({ accessToken: accessToken })
+  })
 })
 
-app.delete('/logout', (req, res) => {
-    refreshTokens = refreshTokens.filter(token => token !== req.body.token)
-    res.sendStatus(204)
+app.delete('/logout', (request, response) => {
+  refreshTokens = refreshTokens.filter(token => token !== request.body.token)
+  response.sendStatus(204)
 })
 
-app.post('/login', (req, res) => {
-    // Authenticate User
+app.post('/login', (request, response) => {
+  // Authenticate User
 
-    const username = req.body.username
-    const user = { name: username }
+  const username = request.body.username
+  const user = { name: username }
 
-    const accessToken = generateAccessToken(user)
-    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
-    refreshTokens.push(refreshToken)
-    res.json({ accessToken: accessToken, refreshToken: refreshToken })
+  const accessToken = generateAccessToken(user)
+  const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+  refreshTokens.push(refreshToken)
+  response.json({ accessToken: accessToken, refreshToken: refreshToken })
 })
 
 function generateAccessToken(user) {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
 }
 
 app.listen(4000)
